@@ -1,40 +1,100 @@
 import { connect, disconnect } from "@/app/db/connection";
 import { ObjectId } from "mongodb";
-import next from "next";
 import { NextResponse, NextRequest } from "next/server";
 
-export async function GET(req: NextRequest, res: NextResponse) {
-    return NextResponse.json({ data: "GET successful", status: 200 }, { status: 200 });
+export async function GET() {
+    return NextResponse.json(
+        { success: true, message: "GET successful" },
+        { status: 200 }
+    );
 }
 
-export async function POST(req: NextRequest, res: any) {
+export async function POST(req: NextRequest) {
+    let db;
+
     try {
-        const { userA,userB,msg } = await req.json();
-        const db = await connect();
-        const collection1 = db.collection('Messages');
-        const collection2 = db.collection('MsgMap');
-        const data = await collection1.find({ $or: [{ sent: userA, received: userB }, { sent: userB, received: userA }] }).toArray();
-        if(data.length===0){
-            const msgId=new ObjectId();
-            await collection1.insertOne({msg:msg,sent:userA,received:userB,timestamp:new Date(),msgId:msgId});
-            await collection2.insertOne({msgId:msgId,prevID:null,nextID:null});
-        } else {
-            const msgId=new ObjectId();
-            await collection1.insertOne({msg:msg,sent:userA,received:userB,timestamp:new Date(),msgId:msgId});
-            await collection2.insertOne({msgId:msgId,prevID:data[data.length-1].msgId,nextID:null});
-            await collection2.updateOne({msgId:data[data.length-1].msgId},{$set:{nextID:msgId}});
+        const body = await req.json();
+        const { userA, userB, msg } = body;
+
+        // ✅ Basic validation
+        if (!userA || !userB || !msg) {
+            return NextResponse.json(
+                { success: false, message: "Missing required fields" },
+                { status: 400 }
+            );
         }
-        
-        return NextResponse.json({
-            msg: "Message stored success!!",
-            status: 200,
-            data: data
-        },
-            { status: 200 });
-    } catch (e: any) {
-        console.log(e)
-        return NextResponse.json({ msg: "Internal server error", status: 505, error: e }, { status: 505 });
+
+        db = await connect();
+        const messagesCol = db.collection("Messages");
+        const mapCol = db.collection("MsgMap");
+
+        const msgId = new ObjectId();
+
+        // ✅ Get last message only (efficient)
+        const lastMessage = await messagesCol
+            .find({
+                $or: [
+                    { sent: userA, received: userB },
+                    { sent: userB, received: userA },
+                ],
+            })
+            .sort({ timestamp: -1 })
+            .limit(1)
+            .toArray();
+
+        const newMessage = {
+            msg,
+            sent: userA,
+            received: userB,
+            timestamp: new Date(),
+            msgId,
+        };
+
+        await messagesCol.insertOne(newMessage);
+
+        if (lastMessage.length === 0) {
+            // ✅ First message
+            await mapCol.insertOne({
+                msgId,
+                prevID: null,
+                nextID: null,
+            });
+        } else {
+            const prevMsgId = lastMessage[0].msgId;
+
+            await mapCol.insertOne({
+                msgId,
+                prevID: prevMsgId,
+                nextID: null,
+            });
+
+            await mapCol.updateOne(
+                { msgId: prevMsgId },
+                { $set: { nextID: msgId } }
+            );
+        }
+
+        return NextResponse.json(
+            {
+                success: true,
+                message: "Message stored successfully",
+                data: newMessage,
+            },
+            { status: 201 }
+        );
+
+    } catch (error: any) {
+        console.error("POST error:", error);
+
+        return NextResponse.json(
+            {
+                success: false,
+                message: "Internal server error",
+                error: error.message,
+            },
+            { status: 500 }
+        );
     } finally {
-        await disconnect();
+        if (db) await disconnect();
     }
 }

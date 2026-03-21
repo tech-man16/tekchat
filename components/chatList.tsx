@@ -62,7 +62,7 @@ const Chatlist = () => {
   return (
     <div className="flex flex-col flex-1/3 border">
       <div className="flex justify-between items-center border-b">
-        <span className="p-4 border-b font-semibold text-2xl">Chats</span>
+        <span className="p-4 font-semibold text-2xl">Chats</span>
         <SearchFriend />
       </div>
       {friendList.length === 0 ? (
