@@ -127,11 +127,11 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col flex-2/3 gap-2 p-4 border-l">
-      <span className="p-4 font-semibold text-2xl">{user}</span>
-      <div className="flex flex-col flex-2/3 p-4 border">
+    <div className="flex flex-col flex-2/3 gap-2 p-4 border rounded-lg">
+      <span className="p-3 font-semibold text-2xl">{user}</span>
+      <div className="flex flex-col flex-2/3 gap-2 p-4 border rounded-lg overflow-y-auto">
         {msg.length === 0 ? (
-          <div className="flex justify-center items-center h-full text-gray-500">
+          <div className="flex justify-center items-center h-full font-bold text-gray-500 text-xl">
             No messages yet. Start the conversation!
           </div>
         ) : (

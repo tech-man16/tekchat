@@ -59,4 +59,14 @@ const getFriends = async (params: any) => {
   return data;
 };
 
-export { insertUSER, getUser, getConversation, storeChat, getFriends };
+const searchFriend = async (params: any) => {
+  const PATH = path.join(process.cwd(), "/search");
+  const res = await fetch(PATH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json();
+  return data;
+};
+export { insertUSER, getUser, getConversation, storeChat, getFriends, searchFriend };

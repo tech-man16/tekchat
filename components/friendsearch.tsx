@@ -1,3 +1,4 @@
+import { searchFriend } from "@/app/(server)/actions";
 import {
   Modal,
   ModalContent,
@@ -8,6 +9,7 @@ import {
   useDisclosure,
   Input,
 } from "@heroui/react";
+import { useState } from "react";
 
 export const SearchIcon = (props: any) => {
   return (
@@ -49,10 +51,31 @@ export const ProfileIcon = (props: any) => {
 
 export default function SearchFriend() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [friendId, setFriendId] = useState([]);
+  const [msg, setMsg] = useState("No friends found.");
+
+  const handleSearch = async (e: any) => {
+    console.log("Searching for friend with userId:", e.target.value);
+    setMsg("Searching...");
+    if (e.target.value.trim() === "") {
+      setFriendId([]);
+      setMsg("No friends found.");
+      return;
+    }
+    const result = await searchFriend({ userId: e.target.value });
+    if (result.status === 200) {
+      const userIds = result.data.map((user: any) => user.userId);
+      setFriendId(userIds);
+      setMsg("Friends found.");
+    } else {
+      setFriendId([]);
+      setMsg("No friends found.");
+    }
+  };
 
   return (
     <div className="flex p-3">
-      <Button isIconOnly  onPress={onOpen}>
+      <Button isIconOnly onPress={onOpen}>
         <SearchIcon />
       </Button>
       <Modal isOpen={isOpen} placement="top-center" onOpenChange={onOpenChange}>
@@ -76,7 +99,19 @@ export default function SearchFriend() {
                     </Button>
                   }
                   variant="bordered"
+                  onChange={handleSearch}
                 />
+                <div className="mt-4">
+                  {friendId.length > 0 ? (
+                    <ul>
+                      {friendId.map((id: string) => (
+                        <li key={id}>{id}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>{msg}</p>
+                  )}
+                </div>
               </ModalBody>
             </>
           )}

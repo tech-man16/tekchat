@@ -1,5 +1,4 @@
 import { connect, disconnect } from "@/app/db/connection";
-import { ObjectId } from "mongodb";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(req: NextRequest, res: NextResponse) {
@@ -9,20 +8,23 @@ export async function GET(req: NextRequest, res: NextResponse) {
 export async function POST(req: NextRequest, res: any) {
     try {
         const { userId } = await req.json();
+        console.log("Received userId for search:", userId);
         const db = await connect();
         const collection = db.collection('userDetails');
-        const data = await collection.find({ userId: userId }).toArray();
+        // Use a real regex (or $regex) so MongoDB performs a case-insensitive search
+        const query = { userId: { $regex: userId, $options: 'i' } };
+        const data = await collection.find(query).toArray();
         
         if(data.length===0){
             return NextResponse.json({
-                msg: "No Conversation Found !!"
+                msg: "No user Found !!"
             , status: 404
             },
                 { status: 404 });
         }
 
         return NextResponse.json({
-            msg: "Get mail Successfull !!",
+            msg: "User found !!",
             status: 200,
             data: data
         },
