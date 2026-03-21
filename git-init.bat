@@ -1,3 +1,4 @@
+cd "D:\Coding 2026\tekChat\tekchat"
 git init
 git add .
 git commit -m "first commit"
