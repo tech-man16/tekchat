@@ -49,7 +49,9 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col justify-center items-center bg-gray-800 h-screen">
       <div className="bg-black shadow-md p-8 rounded w-96">
-        <h2 className="mb-6 font-bold text-2xl text-center">Login</h2>
+        <span className="flex justify-center items-center mb-6 font-bold text-2xl text-center">
+          Login
+        </span>
 
         <Input
           type="text"
