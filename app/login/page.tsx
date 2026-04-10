@@ -24,7 +24,11 @@ export default function LoginPage() {
     try {
       const userData = await getUser({ userId: username, password: password });
       if (userData.status === 200) {
-        setKey((prev: any) => ({ ...prev, login: true }));
+        setKey((prev: any) => ({
+          ...prev,
+          login: true,
+          loginUser: userData.data,
+        }));
         router.push("/" + username + "/home");
       } else {
         // If user not found, create a new user

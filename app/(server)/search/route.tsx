@@ -8,7 +8,6 @@ export async function GET(req: NextRequest, res: NextResponse) {
 export async function POST(req: NextRequest, res: any) {
     try {
         const { userId } = await req.json();
-        console.log("Received userId for search:", userId);
         const db = await connect();
         const collection = db.collection('userDetails');
         // Use a real regex (or $regex) so MongoDB performs a case-insensitive search

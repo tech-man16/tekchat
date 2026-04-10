@@ -1,10 +1,10 @@
 "use client";
-import { Input } from "@heroui/input";
-import { Button } from "@heroui/button";
+
 import { chatContext } from "@/app/context/context";
 import { useContext, useEffect, useState } from "react";
 import { getConversation } from "@/app/(server)/actions";
 import { storeChat } from "@/app/(server)/actions";
+import ChatBox from "./ChatBox";
 
 export const SendIcon = () => (
   <svg
@@ -161,24 +161,8 @@ export default function ChatPage() {
           })
         )}
       </div>
-      {/* send message */}
-      <div className="flex gap-4">
-        <Input
-          type="text"
-          placeholder="Start your conversation..."
-          value={sentMsg}
-          onChange={(e) => setSentMsg(e.target.value)}
-          startContent={
-            <Button isIconOnly variant="light" size="sm">
-              {" "}
-              <AddIcon />{" "}
-            </Button>
-          }
-        />
-        <Button onPress={() => handleSendMessage(sentMsg)}>
-          <SendIcon />
-        </Button>
-      </div>
+      {/* send message (realtime via Ably) */}
+      <ChatBox messages={msg} setMessages={setMsg} />
     </div>
   );
 }
