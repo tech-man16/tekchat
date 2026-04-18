@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET() {
     return NextResponse.json(
-        { success: true, message: "GET successful" },
+        { success: true, message: "GET successful", status:200 },
         { status: 200 }
     );
 }
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         // ✅ Basic validation
         if (!userA || !userB || !msg) {
             return NextResponse.json(
-                { success: false, message: "Missing required fields" },
+                { success: false, message: "Missing required fields",status:400 },
                 { status: 400 }
             );
         }
@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
                 success: true,
                 message: "Message stored successfully",
                 data: newMessage,
+                status:201
             },
             { status: 201 }
         );
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
                 success: false,
                 message: "Internal server error",
                 error: error.message,
+                status:500
             },
             { status: 500 }
         );

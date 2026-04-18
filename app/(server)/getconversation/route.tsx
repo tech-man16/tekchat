@@ -31,6 +31,7 @@ export async function POST(req: NextRequest, res: any) {
       return NextResponse.json(
         {
           msg: "No Conversation Found !!",
+          data: [],
           status: 404,
         },
         { status: 404 },

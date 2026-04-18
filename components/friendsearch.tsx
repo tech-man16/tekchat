@@ -1,5 +1,5 @@
 "use client";
-import { searchFriend } from "@/app/(server)/actions";
+import { searchFriend, updateStatus } from "@/app/(server)/actions";
 import { chatContext } from "@/app/context/context";
 import {
   Modal,
@@ -14,84 +14,61 @@ import {
 } from "@heroui/react";
 
 import { useContext, useState } from "react";
-import { AddIcon } from "./chatPage";
 
-export const SearchIcon = (props: any) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className={`size-6 ${props.className || ""}`}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-      />
-    </svg>
-  );
-};
+// --- ICONS ---
 
-export const ProfileIcon = (props: any) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="size-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-      />
-    </svg>
-  );
-};
+export const AddIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="1.5"
+    stroke="currentColor"
+    className={className || "size-6"}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 4.5v15m7.5-7.5h-15"
+    />
+  </svg>
+);
 
-const AddFriendButton = (props: any) => {
-  return (
-    <Button
-      isIconOnly
-      variant="light"
-      size="sm"
-      onPress={() => alert("clicked add friend button")}
-    >
-      <AddIcon className="size-3" />
-    </Button>
-  );
-};
+export const SearchIcon = (props: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="1.5"
+    stroke="currentColor"
+    className={`size-6 ${props.className || ""}`}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+    />
+  </svg>
+);
 
-const RemoveFriendButton = (props: any) => {
-  return (
-    <Button
-      isIconOnly
-      variant="light"
-      size="sm"
-      onPress={() => alert("clicked remove friend button")}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth="1.5"
-        stroke="currentColor"
-        className="size-3"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    </Button>
-  );
-};
+export const ProfileIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="1.5"
+    stroke="currentColor"
+    className="size-5 text-purple-400"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+    />
+  </svg>
+);
+
+// --- SEARCH FRIEND COMPONENT ---
 
 export default function SearchFriend() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -102,17 +79,18 @@ export default function SearchFriend() {
   const { key }: any = useContext(chatContext);
 
   const handleSearch = async (e: any) => {
-    console.log("Searching for friend with userId:", e.target.value);
-    setVal(e.target.value);
+    const searchVal = e.target.value;
+    setVal(searchVal);
     setMsg("Searching...");
-    if (e.target.value.trim() === "" || e.target.value === key.a) {
+
+    if (searchVal.trim() === "" || searchVal === key.loginUser.userId) {
       setFriendId([]);
       setMsg("No friends found.");
       return;
     }
-    const result = await searchFriend({ userId: e.target.value });
+
+    const result = await searchFriend({ userId: searchVal });
     if (result.status === 200) {
-      // const userIds = result.data.map((user: any) => user.userId);
       setFriendId(result.data);
       setMsg("Friends found.");
     } else {
@@ -121,95 +99,118 @@ export default function SearchFriend() {
     }
   };
 
+  const handleStatusUpdate = async (status: string, user: any) => {
+    try {
+      const res = await updateStatus({
+        userA: { ID: key.a, name: key.loginUser.userId },
+        userB: { ID: user._id, name: user.userId },
+        statusRequest: status,
+      });
+      if (res.status !== 200) {
+        alert("Failed to update status: " + res.msg);
+      }
+    } catch (error) {
+      alert("An error occurred while updating status.");
+    }
+  };
+
   return (
-    <div className="flex p-3">
-      <Button isIconOnly onPress={onOpen}>
-        <SearchIcon />
+    <div className="flex">
+      <Button
+        isIconOnly
+        onPress={onOpen}
+        className="bg-[#1a1425] hover:bg-[#7c3aed] border border-[#2d213f] text-purple-400 hover:text-white transition-all"
+      >
+        <SearchIcon className="size-5" />
       </Button>
-      <Modal isOpen={isOpen} placement="top-center" onOpenChange={onOpenChange}>
+
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        placement="center"
+        backdrop="blur"
+        classNames={{
+          base: "bg-[#0f0a19] border border-[#2d213f] text-[#e9d5ff]",
+          header: "border-b border-[#2d213f] text-white",
+          body: "py-6",
+        }}
+      >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                Search Friend
+              <ModalHeader className="font-bold text-xl">
+                Find People
               </ModalHeader>
               <ModalBody>
                 <Input
+                  autoFocus
+                  placeholder="Enter username..."
                   startContent={<ProfileIcon />}
-                  endContent={
-                    <Button
-                      isIconOnly
-                      variant="light"
-                      size="sm"
-                      onPress={() => alert("clicked search button")}
-                    >
-                      <SearchIcon className="size-3" />
-                    </Button>
-                  }
                   variant="bordered"
-                  onChange={handleSearch}
                   value={val}
+                  onChange={handleSearch}
+                  classNames={{
+                    input: "text-white",
+                    inputWrapper:
+                      "border-[#2d213f] hover:border-[#7c3aed] focus-within:!border-[#7c3aed] bg-[#150f24]",
+                    label: "text-purple-300",
+                  }}
                 />
-                <div className="mt-4">
+
+                <div className="mt-6 min-h-[100px]">
                   {friendId.length > 0 ? (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                       {friendId.map((user: any) => (
-                        <div key={user.userId} className="flex justify-between">
-                          <div>{user.userId}</div>
-                          <div>
-                            {val in key.loginUser.f ? (
-                              <div className="flex items-center gap-2">
-                                <Chip color="success" variant="flat">
-                                  Friends
-                                </Chip>
+                        <div
+                          key={user.userId}
+                          className="flex justify-between items-center bg-[#150f24] hover:bg-[#1a1425] p-3 border border-[#2d213f] rounded-xl transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex justify-center items-center bg-gradient-to-tr from-[#7c3aed] to-[#d8b4fe] rounded-full w-9 h-9 font-bold text-white">
+                              {user.userId.toUpperCase()}
+                            </div>
+                            <span className="font-medium text-white">
+                              {user.userId}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center">
+                            {/* logic checks based on your specific nested key structure */}
+                            {key.loginUser.status?.[user._id]?.includes(
+                              "accepted",
+                            ) ? (
+                              <Chip
+                                color="success"
+                                variant="flat"
+                                className="bg-green-500/10 border-green-500/20 text-green-400"
+                              >
+                                Friends
+                              </Chip>
+                            ) : key.loginUser.status?.[user._id]?.includes(
+                                "requested",
+                              ) ? (
+                              <Chip
+                                color="warning"
+                                variant="flat"
+                                className="bg-orange-500/10 border-orange-500/20 text-orange-400"
+                              >
+                                Pending
+                              </Chip>
+                            ) : (
+                              <Tooltip
+                                content="Send Request"
+                                className="bg-[#7c3aed] text-white"
+                              >
                                 <Button
                                   isIconOnly
-                                  color="danger"
-                                  variant="light"
-                                  // onPress={() => setStatus("none")}
+                                  size="sm"
+                                  className="bg-[#7c3aed] hover:bg-[#6d28d9] shadow-lg shadow-purple-900/20 rounded-full text-white"
+                                  onPress={() =>
+                                    handleStatusUpdate("request", user)
+                                  }
                                 >
-                                  -
+                                  <AddIcon className="size-4" />
                                 </Button>
-                              </div>
-                            ) : val in key.loginUser.request ? (
-                              <Chip
-                                variant="flat"
-                                color="warning"
-                                className="hover:opacity-80 transition-opacity cursor-pointer"
-                                // startContent={
-                                //   <Clock size={14} className="ml-1" />
-                                // }
-                                // onClick={() => setStatus("none")} // The toggle logic
-                              >
-                                Requested (Click to Cancel)
-                              </Chip>
-                            ) : val in key.loginUser.notify ? (
-                              <div className="flex items-center gap-2">
-                                <span className="mr-1 font-bold text-default-400 text-tiny uppercase">
-                                  Request:
-                                </span>
-                                <Chip
-                                  color="success"
-                                  variant="shadow"
-                                  className="hover:scale-105 transition-transform cursor-pointer"
-                                  // startContent={<Check size={14} />}
-                                  // onClick={() => setStatus("friends")}
-                                >
-                                  Accept
-                                </Chip>
-                                <Chip
-                                  color="danger"
-                                  variant="flat"
-                                  className="hover:scale-105 transition-transform cursor-pointer"
-                                  // startContent={<X size={14} />}
-                                  // onClick={() => setStatus("none")}
-                                >
-                                  Reject
-                                </Chip>
-                              </div>
-                            ) : (
-                              <Tooltip content="Add Friend">
-                                <AddFriendButton />
                               </Tooltip>
                             )}
                           </div>
@@ -217,7 +218,10 @@ export default function SearchFriend() {
                       ))}
                     </div>
                   ) : (
-                    <p>{msg}</p>
+                    <div className="flex flex-col justify-center items-center opacity-40 py-8">
+                      <SearchIcon className="mb-2 size-12" />
+                      <p className="text-sm italic">{msg}</p>
+                    </div>
                   )}
                 </div>
               </ModalBody>

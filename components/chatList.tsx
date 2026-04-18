@@ -3,7 +3,6 @@
 import { chatContext } from "@/app/context/context";
 import { useContext, useEffect, useState } from "react";
 import { Button } from "@heroui/react";
-import { getFriends } from "@/app/(server)/actions";
 import SearchFriend from "./friendsearch";
 
 export const ArrowRightIcon = () => (
@@ -11,7 +10,7 @@ export const ArrowRightIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    strokeWidth="1.5"
+    strokeWidth="2"
     stroke="currentColor"
     className="size-4"
   >
@@ -26,88 +25,93 @@ export const ArrowRightIcon = () => (
 const Chatlist = () => {
   const { key, setKey } = useContext(chatContext);
 
-  // const li = [
-  //   { id: 1, name: "B" },
-  //   { id: 2, name: "Honda" },
-  //   { id: 3, name: "Toyota" },
-  // ];
-
-  const [friendList, setFriendList]: any = useState({});
+  // Initialized as array to prevent .length errors
+  const [friendList, setFriendList]: any = useState([]);
 
   useEffect(() => {
-    if (!key?.login) return;
-    let mounted = true;
-
-    if (key.a == null) return;
-    const fetchFriends = async () => {
-      try {
-        console.log("Fetching friends for user:", key);
-        const res = await getFriends({ userId: key.a });
-        if (res.status === 200 && mounted) {
-          setFriendList(res.data[0] || []);
-          console.log("Friend list updated:", res.data[0] || []);
-        }
-      } catch (err) {
-        console.error("Error fetching friends:", err);
-      }
-    };
-
-    void fetchFriends();
-
-    return () => {
-      mounted = false;
-    };
-  }, [key?.a]);
+    if (key?.login) {
+      const statuses = key.loginUser.status || {};
+      const filteredData: any = Object.entries(statuses)
+        .filter(([key, value]: any) => value.includes("accepted"))
+        .map(([key, value]) => ({
+          id: key,
+          details: value,
+        }));
+      setFriendList(filteredData);
+    } else {
+      console.log("User not logged in, skipping notification fetch.");
+    }
+  }, [key]);
 
   return (
-    <div className="flex flex-col flex-1/3 border">
-      <div className="flex justify-between items-center border-b">
-        <span className="p-4 font-semibold text-2xl">Chats</span>
+    <div className="flex flex-col flex-1/3 bg-[#0f0a19] border-[#2d213f] border-r h-full text-[#e9d5ff]">
+      {/* Header Area */}
+      <div className="flex justify-between items-center bg-[#150f24] p-2 border-[#2d213f] border-b">
+        <span className="p-4 font-bold text-white text-2xl tracking-tight">Chats</span>
         <SearchFriend />
       </div>
-      {friendList.length === 0 ? (
-        <div className="flex justify-center items-center h-full font-bold text-xl">
-          No friends found. Start a new chat!
-        </div>
-      ) : (
-        friendList.f &&
-        Object.keys(friendList.f).map((friend: any) => (
-          <div
-            key={friend}
-            className="flex justify-between items-center gap-2 p-4 border-b"
-          >
-            <div className="flex-1 hover:bg-gray-700/80 p-4 cursor-pointer">
-              {friend}
+
+      {/* List Container */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#2d213f]">
+        {friendList.length === 0 ? (
+          <div className="flex flex-col justify-center items-center p-6 h-full font-semibold text-gray-500 text-xl text-center">
+            <div className="opacity-20 mb-4">
+              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
             </div>
-            <Button
-              onPress={() =>
-                setKey((prev: any) => ({
-                  ...prev,
-                  b: friend,
-                }))
-              }
-              className="hover:bg-purple-600/80 p-2 hover:cursor-pointer"
+            No friends found.<br/> 
+            <span className="font-normal text-gray-600 text-sm">Start a new chat!</span>
+          </div>
+        ) : (
+          friendList &&
+          Object.values(friendList).map((friend: any) => (
+            <div
+              key={friend.id}
+              className={`flex justify-between items-center gap-2 border-b border-[#1a1425] transition-colors duration-200 ${
+                key?.b === friend.details[0] ? "bg-[#2d213f]" : "hover:bg-[#150f24]"
+              }`}
             >
-              <ArrowRightIcon />
-            </Button>
-          </div>
-        ))
-      )}
-      {/* {friendList.friends?.map((item: any) => (
-        <div key={item.id} className="flex gap-2 p-4 border-b">
-          <div className="flex-1 hover:bg-gray-700/80 p-4 cursor-pointer">
-            {item.name}
-          </div>
-          <button
-            onClick={() => setKey((prev: any) => ({ ...prev, b: item.name }))}
-            className="hover:bg-amber-200 p-2 hover:text-black hover:cursor-pointer"
-          >
-            <ArrowRightIcon />
-          </button>
-        </div>
-      ))} */}
+              <div 
+                className="flex flex-1 items-center gap-4 p-5 cursor-pointer"
+                onClick={() =>
+                  setKey((prev: any) => ({
+                    ...prev,
+                    b: friend.details[0],
+                  }))
+                }
+              >
+                {/* Initial Avatar circle */}
+                <div className="flex justify-center items-center bg-gradient-to-tr from-[#7c3aed] to-[#6d28d9] shadow-md rounded-full w-10 h-10 font-bold text-white">
+                  {friend.details[0].toUpperCase()}
+                </div>
+                
+                <span className="font-medium text-[16px]">
+                  {friend.details[0]}
+                </span>
+              </div>
+
+              <div className="pr-4">
+                <Button
+                  isIconOnly
+                  onPress={() =>
+                    setKey((prev: any) => ({
+                      ...prev,
+                      b: friend.details[0],
+                    }))
+                  }
+                  className="bg-[#1a1425] hover:bg-[#7c3aed] rounded-full w-10 min-w-0 h-10 text-purple-400 hover:text-white transition-all"
+                >
+                  <ArrowRightIcon />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
 
 export default Chatlist;
+// export default Chatlist;

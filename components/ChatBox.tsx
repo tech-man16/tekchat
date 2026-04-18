@@ -6,6 +6,18 @@ import Ably from "ably";
 import { chatContext } from "@/app/context/context";
 import { storeChat } from "@/app/(server)/actions";
 
+// --- SEND ICON ---
+const SendIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="size-5"
+  >
+    <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+  </svg>
+);
+
 type Props = {
   messages: any[];
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
@@ -21,13 +33,13 @@ export default function ChatBox({ messages, setMessages }: Props) {
     if (!key?.a || !key?.b) return;
 
     const ids = [key.a, key.b].sort();
-    const channelName = `private-chat:${ids[0]}:${ids[1]}`;
+    const channelName = `private-chat:${ids}:${ids}`;
 
-    // Create an Ably Realtime client that will request tokens from our server route
-    // The server route is at /ably/token and already supports the required params
     // @ts-ignore
     const ably = new Ably.Realtime({
-      authUrl: `/ably/token?userA=${encodeURIComponent(key.a)}&userB=${encodeURIComponent(key.b)}&clientId=${encodeURIComponent(key.a)}`,
+      authUrl: `/ably/token?userA=${encodeURIComponent(key.a)}&userB=${encodeURIComponent(
+        key.b,
+      )}&clientId=${encodeURIComponent(key.a)}`,
       clientId: key.a,
     });
 
@@ -35,7 +47,6 @@ export default function ChatBox({ messages, setMessages }: Props) {
     channel.subscribe((msg: any) => {
       try {
         const data = msg.data;
-        // normalize message object shape
         const incoming =
           typeof data === "object" &&
           data !== null &&
@@ -52,7 +63,6 @@ export default function ChatBox({ messages, setMessages }: Props) {
               };
 
         setMessages((prev) => {
-          // avoid duplicates
           const last = prev[prev.length - 1];
           if (last && last.msg === incoming.msg && last.sent === incoming.sent)
             return prev;
@@ -69,9 +79,7 @@ export default function ChatBox({ messages, setMessages }: Props) {
     return () => {
       try {
         channel.unsubscribe();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       try {
         ably.close();
       } catch (e) {}
@@ -83,47 +91,69 @@ export default function ChatBox({ messages, setMessages }: Props) {
   const handleSend = async () => {
     if (!text.trim() || !key?.a || !key?.b) return;
     const channel = channelRef.current;
+    const messageText = text;
+    setText(""); // Clear immediately for UI responsiveness
 
     const payload = {
-      msg: text,
+      msg: messageText,
       sent: key.a,
       received: key.b,
       timestamp: new Date(),
     };
 
     try {
-      // Publish via Ably for realtime delivery
       if (channel) {
         channel.publish("message", payload);
       }
 
-      // Persist in MongoDB via existing storeChat action
-      const res = await storeChat({ userA: key.a, userB: key.b, msg: text });
+      const res = await storeChat({
+        userA: key.a,
+        userB: key.b,
+        msg: messageText,
+      });
       if (res?.status === 200 || res?.status === 201) {
-        // append locally
-        setMessages((prev) => [
-          ...prev,
-          { sent: key.a, msg: text, timestamp: new Date() },
-        ]);
-      } else {
-        console.error("storeChat failed", res);
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && last.msg === messageText && last.sent === key.a)
+            return prev;
+          return [
+            ...prev,
+            { sent: key.a, msg: messageText, timestamp: new Date() },
+          ];
+        });
       }
     } catch (e) {
       console.error("Error sending message:", e);
-    } finally {
-      setText("");
     }
   };
 
   return (
-    <div className="flex gap-4">
+    <div className="flex items-center gap-2 bg-[#150f24] shadow-lg p-2 border border-[#2d213f] rounded-2xl">
       <Input
         type="text"
+        variant="flat"
         placeholder="Type a message..."
         value={text}
+        onKeyDown={(e) => e.key === "Enter" && handleSend()}
         onChange={(e: any) => setText(e.target.value)}
+        classNames={{
+          input: "text-white placeholder:text-gray-500",
+          inputWrapper: [
+            "bg-transparent",
+            "hover:bg-transparent",
+            "group-data-[focus=true]:bg-transparent",
+            "shadow-none",
+          ],
+        }}
       />
-      <Button onPress={handleSend}>Send</Button>
+      <Button
+        isIconOnly
+        radius="full"
+        onPress={handleSend}
+        className="bg-[#7c3aed] hover:bg-[#6d28d9] shadow-lg shadow-purple-900/20 text-white active:scale-95 transition-all"
+      >
+        <SendIcon />
+      </Button>
     </div>
   );
 }

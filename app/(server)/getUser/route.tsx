@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, res: any) {
     const collection = db.collection("userDetails");
     const data = await collection.findOne(
       { userId: userId, password: password },
-      { projection: { _id: 0, password: 0 } },
+      { projection: {  password: 0 } },
     );
 
     if (!data) {
