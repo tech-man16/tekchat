@@ -33,7 +33,7 @@ export default function ChatBox({ messages, setMessages }: Props) {
     if (!key?.a || !key?.b) return;
 
     const ids = [key.a, key.b].sort();
-    const channelName = `private-chat:${ids}:${ids}`;
+    const channelName = `private-chat:${ids[0]}:${ids[1]}`;
 
     // @ts-ignore
     const ably = new Ably.Realtime({

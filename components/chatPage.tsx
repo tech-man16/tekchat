@@ -5,7 +5,6 @@ import { useContext, useEffect, useState } from "react";
 import { getConversation } from "@/app/(server)/actions";
 import ChatBox from "./ChatBox";
 import NotificationDrawer from "./notification";
-import { ObjectId } from "mongodb";
 
 // --- ICONS ---
 
@@ -101,8 +100,11 @@ export const RecieveBox = ({ msg }: { msg: string }) => {
 
 // --- MAIN PAGE ---
 
+import { MessageSquareIcon, XIcon } from "lucide-react";
+import { Button } from "@heroui/react";
+
 export default function ChatPage() {
-  const { key }: any = useContext(chatContext);
+  const { key, setKey }: any = useContext(chatContext);
   const [msg, setMsg]: any = useState([]);
   const user = key?.b || "Chat Page";
 
@@ -117,17 +119,42 @@ export default function ChatPage() {
         }
       }
     };
-
     void fetchConversation();
   }, [key?.a, key?.b]);
 
+  // Function to clear the active chat and return to the empty state
+  const handleCloseChat = () => {
+    setKey((prev: any) => ({
+      ...prev,
+      b: null,
+    }));
+  };
+
+  if (!key?.b) {
+    return (
+      <div className="flex flex-col justify-center items-center bg-[#0f0a19] shadow-2xl border border-[#2d213f] rounded-xl w-full h-[calc(100vh-2rem)] overflow-hidden">
+        <div className="relative flex flex-col items-center px-6 text-center">
+          <div className="relative bg-[#1a1425] mb-6 p-6 border border-[#2d213f] rounded-3xl text-purple-400">
+            <MessageSquareIcon size={48} strokeWidth={1.5} />
+          </div>
+          <h2 className="mb-2 font-bold text-white text-3xl tracking-tight">
+            Select a Conversation
+          </h2>
+          <p className="max-w-xs text-gray-500 text-sm">
+            Choose a contact to start messaging.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col bg-[#0f0a19] shadow-2xl border border-[#2d213f] rounded-xl w-full h-[calc(100vh-2rem)] overflow-hidden">
+    <div className="flex flex-col bg-[#0f0a19] shadow-2xl border border-[#2d213f] rounded-xl w-full h-[calc(100vh-2rem)] overflow-hidden text-gray-100">
       {/* Header */}
       <div className="flex justify-between items-center bg-[#150f24]/80 backdrop-blur-md px-6 py-4 border-[#2d213f] border-b">
         <div className="flex items-center gap-3">
-          <div className="flex justify-center items-center bg-gradient-to-tr from-[#7c3aed] to-[#d8b4fe] shadow-lg rounded-full w-10 h-10 font-bold text-white">
-            {typeof user === "string" ? user.toUpperCase() : "U"}
+          <div className="flex justify-center items-center bg-gradient-to-tr from-[#7c3aed] to-[#d8b4fe] rounded-full w-10 h-10 font-bold text-white">
+            {typeof user === "string" ? user.toUpperCase().charAt(0) : "U"}
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-white tracking-tight">{user}</span>
@@ -137,26 +164,34 @@ export default function ChatPage() {
             </span>
           </div>
         </div>
-        <NotificationDrawer
-          data={{
-            userA: { ID: key?.loginUser?._id, name: key?.loginUser?.userId },
-          }}
-        />
+
+        <div className="flex items-center gap-2">
+          <NotificationDrawer
+            data={{
+              userA: { ID: key?.loginUser?._id, name: key?.loginUser?.userId },
+            }}
+          />
+
+          {/* Close Chat Button */}
+          <Button
+            isIconOnly
+            variant="flat"
+            size="sm"
+            className="bg-white/5 hover:bg-danger/20 rounded-lg text-gray-400 hover:text-danger transition-all"
+            onPress={handleCloseChat}
+            aria-label="Close chat"
+          >
+            <XIcon size={18} />
+          </Button>
+        </div>
       </div>
 
       {/* Chat Messages Area */}
-      <div className="flex flex-col flex-1 gap-3 bg-[#0f0a19] p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-[#2d213f]">
+      <div className="flex flex-col flex-1 gap-3 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-900/50">
         {msg.length === 0 ? (
-          <div className="flex flex-col justify-center items-center space-y-4 h-full">
-            <div className="bg-[#1a1425] p-4 rounded-full text-purple-500">
-              <SendIcon />
-            </div>
-            <p className="font-medium text-gray-500 text-lg">
-              No messages yet.
-            </p>
-            <p className="text-gray-600 text-sm italic">
-              Wave hello to {user}!
-            </p>
+          <div className="flex flex-col justify-center items-center opacity-50 h-full">
+            <SendIcon className="mb-2 text-purple-500" />
+            <p className="text-gray-500">Start the conversation...</p>
           </div>
         ) : (
           msg.map((message: any, index: number) => {
