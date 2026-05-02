@@ -2,7 +2,7 @@ import { MongoClient } from 'mongodb';
 
 // Replace with your MongoDB instance URL
 const url = `${process.env.MONGODB_URI}`;
-const dbName = 'tekChat-App'; // Replace with your database name
+const dbName = process.env.DB_NAME; // Replace with your database name
 
 let client: any;
 const options = {

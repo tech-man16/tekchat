@@ -44,7 +44,7 @@ const Chatlist = () => {
   }, [key]);
 
   return (
-    <div className="flex flex-col flex-1/3 bg-[#0f0a19] border-[#2d213f] border-r h-full text-[#e9d5ff]">
+    <div className="flex flex-col bg-[#0f0a19] w-full h-full text-[#e9d5ff]">
       {/* Header Area */}
       <div className="flex justify-between items-center bg-[#150f24] p-2 border-[#2d213f] border-b">
         <span className="p-4 font-bold text-white text-2xl tracking-tight">Chats</span>
