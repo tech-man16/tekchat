@@ -2,6 +2,7 @@ import { connect, disconnect } from "@/app/db/connection";
 import { NextResponse, NextRequest } from "next/server";
 import { ObjectId } from "mongodb";
 // { userA : {ID:"", name:""}}
+export const dynamic = "force-static";
 
 async function writeToDB(
   userA: any,

@@ -1,6 +1,7 @@
 import { connect, disconnect } from "@/app/db/connection";
-import { ObjectId } from "mongodb";
 import { NextResponse, NextRequest } from "next/server";
+
+export const dynamic = "force-static";
 
 export async function GET(req: NextRequest) {
     return NextResponse.json({ data: "GET successful", status: 200 }, { status: 200 });
