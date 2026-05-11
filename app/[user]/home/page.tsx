@@ -6,6 +6,17 @@ import { useContext, useEffect } from "react";
 import { chatContext } from "@/app/context/context";
 import { motion, AnimatePresence } from "framer-motion";
 
+export const dynamic = "force-static";
+
+export async function generateStaticParams() {
+  // In a real app, you might fetch this from MongoDB:
+  // const users = await db.users.find().toArray();
+  // return users.map((user) => ({ user: user.username }));
+
+  // For now, provide the routes you want to be available:
+  return [{ user: "userA" }, { user: "guestA" }];
+}
+
 export default function Home() {
   const path = usePathname();
   const user = path.split("/")[1];
