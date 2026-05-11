@@ -30,14 +30,14 @@ export async function writeToDB(
   ]);
 }
 
-export async function GET(req: NextRequest, res: NextResponse) {
+export async function GET(req: NextRequest) {
   return NextResponse.json(
     { data: "GET successful", status: 200 },
     { status: 200 },
   );
 }
 
-export async function POST(req: NextRequest, res: any) {
+export async function POST(req: NextRequest, res: NextResponse) {
   try {
     const { userA, userB, statusRequest } = await req.json();
     console.log("Received status update request:", {

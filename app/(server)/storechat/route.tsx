@@ -2,7 +2,7 @@ import { connect, disconnect } from "@/app/db/connection";
 import { ObjectId } from "mongodb";
 import { NextResponse, NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     return NextResponse.json(
         { success: true, message: "GET successful", status:200 },
         { status: 200 }
