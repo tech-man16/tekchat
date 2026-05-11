@@ -25,7 +25,6 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([
-    ...nextVitals,
     ...compat.extends("next/core-web-vitals"),
     {
         plugins: {
