@@ -1,7 +1,7 @@
 import { connect, disconnect } from "@/app/db/connection";
 import { ObjectId } from "mongodb";
 import { NextResponse, NextRequest } from "next/server";
- export const dynamic = "force-static";
+export const dynamic = "force-static";
 export async function GET(req: NextRequest) {
   return NextResponse.json(
     { data: "GET successful", status: 200 },
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, res: any) {
   try {
     const { userA, userB } = await req.json();
     const db = await connect();
-    
+
     const collection = db.collection("Messages");
     await collection.createIndex({ sent: 1, received: 1, timestamp: -1 });
     // const data = await collection.find({ sent: userA, received: userB }).sort().toArray();
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, res: any) {
     }
     let messages = [];
     let currentMsgId = data[0].msgId;
-    
+
     while (currentMsgId) {
       const msgData = await collection.findOne({ msgId: currentMsgId });
       if (msgData) {

@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import Ably from "ably";
 
 export const revalidate = 0;
-
+export const dynamic = "force-static";
 async function createToken(userA: string, userB: string, clientId: string) {
   if (clientId !== userA && clientId !== userB) {
     const res = NextResponse.json({ error: "Unauthorized clientId" }, { status: 403 });
