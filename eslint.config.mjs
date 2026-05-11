@@ -27,10 +27,6 @@ const compat = new FlatCompat({
 export default defineConfig([
     ...compat.extends("next/core-web-vitals"),
     {
-        plugins: {
-            '@next/next': nextPlugin,
-            'react': reactPlugin,
-        },
         rules: {
             'react/no-unescaped-entities': 'off',
             '@next/next/no-page-custom-font': 'off',
