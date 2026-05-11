@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { ObjectId } from "mongodb";
 // { userA : {ID:"", name:""}}
 
-export async function writeToDB(
+async function writeToDB(
   userA: any,
   userB: any,
   collection: any,
