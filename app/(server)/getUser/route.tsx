@@ -1,7 +1,6 @@
 import { connect, disconnect } from "@/app/db/connection";
-import { ObjectId } from "mongodb";
 import { NextResponse, NextRequest } from "next/server";
-
+export const dynamic = "force-static";
 export async function GET(req: NextRequest) {
   return NextResponse.json(
     { data: "GET successful", status: 200 },
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest, res: any) {
     const collection = db.collection("userDetails");
     const data = await collection.findOne(
       { userId: userId, password: password },
-      { projection: {  password: 0 } },
+      { projection: { password: 0 } },
     );
 
     if (!data) {
