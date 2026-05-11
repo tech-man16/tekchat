@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   );
 }
 
-export async function POST(req: NextRequest, res: NextResponse) {
+export async function POST(req: NextRequest) {
   try {
     const { userA, userB, statusRequest } = await req.json();
     console.log("Received status update request:", {
