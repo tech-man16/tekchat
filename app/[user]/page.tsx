@@ -11,6 +11,9 @@
 interface PageProps {
   params: Promise<{ user: string }>;
 }
+export async function generateStaticParams() {
+  return [{ user: "manas" }, { user: "guest" }];
+}
 
 const CurrentUserPage = async ({ params }: PageProps) => {
   // Await the params promise to get the data
