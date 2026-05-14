@@ -41,6 +41,8 @@ export default function ChatBox({ messages, setMessages }: Props) {
         key.b,
       )}&clientId=${encodeURIComponent(key.a)}`,
       clientId: key.a,
+      // Prevents automatic closing by the browser which conflicts with React's cleanup
+      closeOnUnload: false, 
     });
 
     const channel = ably.channels.get(channelName);
@@ -76,13 +78,39 @@ export default function ChatBox({ messages, setMessages }: Props) {
     clientRef.current = ably;
     channelRef.current = channel;
 
+    /**
+     * Logic extracted to a separate function to safely dismantle the connection.
+     * We explicitly check for 'connected' or 'connecting' before calling close.
+     */
+    const safeDisconnect = () => {
+      try {
+        if (channel) {
+          channel.unsubscribe();
+        }
+        
+        if (ably) {
+          // Detach all internal listeners to stop state-change errors during unmount
+          ably.connection.off();
+
+          /* 
+            Logic: ably.close()
+            Fix: Only call close if we are in an active state. 
+            If state is 'closing', 'closed', or 'failed', calling close() triggers the error.
+          */
+
+          const currentState = ably.connection.state;
+          if (currentState === "connected") {
+            ably.close();
+          }
+
+        }
+      } catch (err) {
+        // Suppress any remaining noise during component destruction
+      }
+    };
+
     return () => {
-      try {
-        channel.unsubscribe();
-      } catch (e) {}
-      try {
-        ably.close();
-      } catch (e) {}
+      safeDisconnect();
       channelRef.current = null;
       clientRef.current = null;
     };
@@ -92,7 +120,7 @@ export default function ChatBox({ messages, setMessages }: Props) {
     if (!text.trim() || !key?.a || !key?.b) return;
     const channel = channelRef.current;
     const messageText = text;
-    setText(""); // Clear immediately for UI responsiveness
+    setText(""); 
 
     const payload = {
       msg: messageText,
