@@ -105,14 +105,18 @@ export const RecieveBox = ({ msg }: { msg: string }) => {
 export default function ChatPage() {
   const { key, setKey }: any = useContext(chatContext);
   const [msg, setMsg]: any = useState([]);
+  const [defaultMsg, setDefault] = useState("Start the conversation...");
   const user = key?.b || "Chat Page";
 
   useEffect(() => {
     const fetchConversation = async () => {
+      setMsg([]); // Clear messages when switching conversations
+      setDefault("Loading Conversation");
       if (key?.b != null) {
         try {
           const res = await getConversation({ userA: key.a, userB: key.b });
           setMsg(res.data);
+          setDefault("Start the conversation...");
         } catch (err) {
           console.error("Error fetching conversation:", err);
         }
@@ -190,7 +194,7 @@ export default function ChatPage() {
         {msg.length === 0 ? (
           <div className="flex flex-col justify-center items-center opacity-50 h-full">
             <SendIcon />
-            <p className="mt-2 text-gray-500">Start the conversation...</p>
+            <p className="mt-2 text-gray-500">{defaultMsg}</p>
           </div>
         ) : (
           msg.map((message: any, index: number) => {
