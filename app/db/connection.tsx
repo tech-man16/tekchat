@@ -17,13 +17,13 @@ async function connect(): Promise<Db> {
 
   // Create new client if none cached
   if (!cachedClient) {
-    cachedClient = new MongoClient(url, options as any);
+    // Note: You can remove 'as any' as modern MongoClient options are strictly typed
+    cachedClient = new MongoClient(url, options); 
   }
 
-  // Ensure the client is connected
-  if (!cachedClient.topology || !cachedClient.topology.isConnected()) {
-    await cachedClient.connect();
-  }
+  // Simply call connect(). The driver internally manages the topology 
+  // and prevents duplicate connections.
+  await cachedClient.connect();
 
   cachedDb = cachedClient.db(dbName);
   return cachedDb;

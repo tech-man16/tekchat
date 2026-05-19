@@ -2,7 +2,9 @@
 
 import { chatContext } from "@/app/context/context";
 import { useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
+import { LogOutIcon } from "lucide-react";
 import SearchFriend from "./friendsearch";
 
 export const ArrowRightIcon = () => (
@@ -24,6 +26,7 @@ export const ArrowRightIcon = () => (
 
 const Chatlist = () => {
   const { key, setKey } = useContext(chatContext);
+  const router = useRouter();
 
   // Initialized as array to prevent .length errors
   const [friendList, setFriendList]: any = useState([]);
@@ -43,12 +46,27 @@ const Chatlist = () => {
     }
   }, [key]);
 
+  const handleLogout = () => {
+    setKey((prev: any) => ({ ...(prev || {}), login: false, loginUser: null }));
+    router.push("/login");
+  };
+
   return (
     <div className="flex flex-col bg-[#0f0a19] w-full h-full text-[#e9d5ff]">
       {/* Header Area */}
       <div className="flex justify-between items-center bg-[#150f24] p-2 border-[#2d213f] border-b">
         <span className="p-4 font-bold text-white text-2xl tracking-tight">Chats</span>
-        <SearchFriend />
+        <div className="flex items-center gap-2">
+          <SearchFriend />
+          <Button
+            isIconOnly
+            onPress={handleLogout}
+            aria-label="Logout"
+            className="bg-white/5 hover:bg-danger/10 rounded-full w-10 min-w-0 h-10 text-gray-400 hover:text-danger transition-all"
+          >
+            <LogOutIcon />
+          </Button>
+        </div>
       </div>
 
       {/* List Container */}
