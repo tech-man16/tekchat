@@ -23,11 +23,11 @@ async function createToken(userA: string, userB: string, clientId: string) {
 
   const tokenRequest = await ably.auth.createTokenRequest({
     clientId,
-    capability: JSON.stringify({ [channelName]: ["subscribe", "publish"] }),
+    capability: JSON.stringify({ [channelName]: ["subscribe", "publish", "presence"] }),
   });
 
   console.log(`Ably token created for channel=${channelName} clientId=${clientId}`);
-  console.log("capability:", JSON.stringify({ [channelName]: ["subscribe", "publish"] }));
+  console.log("capability:", JSON.stringify({ [channelName]: ["subscribe", "publish", "presence"] }));
 
   return tokenRequest;
 }

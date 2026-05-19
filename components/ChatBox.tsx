@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Input } from "@heroui/input";
@@ -6,7 +7,6 @@ import Ably from "ably";
 import { chatContext } from "@/app/context/context";
 import { storeChat } from "@/app/(server)/actions";
 
-// --- SEND ICON ---
 const SendIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -21,11 +21,13 @@ const SendIcon = () => (
 type Props = {
   messages: any[];
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+  setIsRecipientOnline: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-export default function ChatBox({ messages, setMessages }: Props) {
+export default function ChatBox({ messages, setMessages, setIsRecipientOnline }: Props) {
   const { key }: any = useContext(chatContext);
   const [text, setText] = useState("");
+  // const [isRecipientOnline, setIsRecipientOnline] = useState(false); // Moved to parent for better state management
   const channelRef = useRef<any>(null);
   const clientRef = useRef<any>(null);
 
@@ -41,11 +43,12 @@ export default function ChatBox({ messages, setMessages }: Props) {
         key.b,
       )}&clientId=${encodeURIComponent(key.a)}`,
       clientId: key.a,
-      // Prevents automatic closing by the browser which conflicts with React's cleanup
       closeOnUnload: false, 
     });
 
     const channel = ably.channels.get(channelName);
+
+    // 1. MESSAGES SUBSCRIPTION
     channel.subscribe((msg: any) => {
       try {
         const data = msg.data;
@@ -75,37 +78,52 @@ export default function ChatBox({ messages, setMessages }: Props) {
       }
     });
 
+    // 2. PRESENCE SUBSCRIPTION
+    channel.presence.subscribe((member) => {
+      const { action, clientId } = member;
+      if (clientId === key.b) {
+        if (action === "enter" || action === "present") {
+          setIsRecipientOnline(true);
+        } else if (action === "leave") {
+          setIsRecipientOnline(false);
+        }
+      }
+    });
+
+    // 3. ASYNC INITIALIZATION
+    const initPresence = async () => {
+      try {
+        const members = await channel.presence.get();
+        const isOnline = members.some((m) => m.clientId === key.b);
+        setIsRecipientOnline(isOnline);
+
+        await channel.presence.enter({ status: "active" });
+      } catch (err) {
+        console.error("Presence initialization error:", err);
+      }
+    };
+
+    initPresence();
+
     clientRef.current = ably;
     channelRef.current = channel;
 
-    /**
-     * Logic extracted to a separate function to safely dismantle the connection.
-     * We explicitly check for 'connected' or 'connecting' before calling close.
-     */
-    const safeDisconnect = () => {
+    const safeDisconnect = async () => {
       try {
         if (channel) {
+          await channel.presence.leave().catch(() => {});
+          channel.presence.unsubscribe();
           channel.unsubscribe();
         }
         
         if (ably) {
-          // Detach all internal listeners to stop state-change errors during unmount
           ably.connection.off();
-
-          /* 
-            Logic: ably.close()
-            Fix: Only call close if we are in an active state. 
-            If state is 'closing', 'closed', or 'failed', calling close() triggers the error.
-          */
-
-          const currentState = ably.connection.state;
-          if (currentState === "connected") {
+          if (ably.connection.state === "connected") {
             ably.close();
           }
-
         }
       } catch (err) {
-        // Suppress any remaining noise during component destruction
+        // Suppress unmount noise
       }
     };
 
@@ -116,10 +134,14 @@ export default function ChatBox({ messages, setMessages }: Props) {
     };
   }, [key?.a, key?.b, setMessages]);
 
+  // --- UPDATED HANDLESEND ---
   const handleSend = async () => {
     if (!text.trim() || !key?.a || !key?.b) return;
+    
     const channel = channelRef.current;
     const messageText = text;
+    
+    // Optimistic UI update: clear the text bar instantly for great UX
     setText(""); 
 
     const payload = {
@@ -127,21 +149,29 @@ export default function ChatBox({ messages, setMessages }: Props) {
       sent: key.a,
       received: key.b,
       timestamp: new Date(),
+      // Optional: You can bundle your known presence state into the payload 
+      // if your server actions or analytical logs ever need it.
+      // recipientWasOnline: isRecipientOnline 
     };
 
     try {
+      // 1. Broadcast real-time message through Ably
       if (channel) {
-        channel.publish("message", payload);
+        await channel.publish("message", payload);
       }
 
+      // 2. Persist the chat string to your database via Server Action
       const res = await storeChat({
         userA: key.a,
         userB: key.b,
         msg: messageText,
       });
+
+      // 3. Update the local sender UI upon database confirmation
       if (res?.status === 200 || res?.status === 201) {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
+          // Deduplication check
           if (last && last.msg === messageText && last.sent === key.a)
             return prev;
           return [
@@ -152,36 +182,41 @@ export default function ChatBox({ messages, setMessages }: Props) {
       }
     } catch (e) {
       console.error("Error sending message:", e);
+      // Fallback: If it completely failed, you could put the text back into the bar
+      // setText(messageText);
     }
   };
 
   return (
-    <div className="flex items-center gap-2 bg-[#150f24] shadow-lg p-2 border border-[#2d213f] rounded-2xl">
-      <Input
-        type="text"
-        variant="flat"
-        placeholder="Type a message..."
-        value={text}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        onChange={(e: any) => setText(e.target.value)}
-        classNames={{
-          input: "text-white placeholder:text-gray-500",
-          inputWrapper: [
-            "bg-transparent",
-            "hover:bg-transparent",
-            "group-data-[focus=true]:bg-transparent",
-            "shadow-none",
-          ],
-        }}
-      />
-      <Button
-        isIconOnly
-        radius="full"
-        onPress={handleSend}
-        className="bg-[#7c3aed] hover:bg-[#6d28d9] shadow-lg shadow-purple-900/20 text-white active:scale-95 transition-all"
-      >
-        <SendIcon />
-      </Button>
+    <div className="flex flex-col gap-2 w-full">
+
+      <div className="flex items-center gap-2 bg-[#150f24] shadow-lg p-2 border border-[#2d213f] rounded-2xl">
+        <Input
+          type="text"
+          variant="flat"
+          placeholder="Type a message..."
+          value={text}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onChange={(e: any) => setText(e.target.value)}
+          classNames={{
+            input: "text-white placeholder:text-gray-500",
+            inputWrapper: [
+              "bg-transparent",
+              "hover:bg-transparent",
+              "group-data-[focus=true]:bg-transparent",
+              "shadow-none",
+            ],
+          }}
+        />
+        <Button
+          isIconOnly
+          radius="full"
+          onPress={handleSend}
+          className="bg-[#7c3aed] hover:bg-[#6d28d9] shadow-lg shadow-purple-900/20 text-white active:scale-95 transition-all"
+        >
+          <SendIcon />
+        </Button>
+      </div>
     </div>
   );
 }

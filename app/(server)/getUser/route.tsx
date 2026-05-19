@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, res: any) {
         { status: 404 },
       );
     }
-
+    
     return NextResponse.json(
       {
         msg: "User Found Successfully !!",

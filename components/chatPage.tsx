@@ -107,6 +107,7 @@ export default function ChatPage() {
   const [msg, setMsg]: any = useState([]);
   const [defaultMsg, setDefault] = useState("Start the conversation...");
   const user = key?.b || "Chat Page";
+  const [isUserOnline, setIsUserOnline] = useState(false); // Placeholder for online status
 
   useEffect(() => {
     const fetchConversation = async () => {
@@ -162,10 +163,17 @@ export default function ChatPage() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-white tracking-tight">{user}</span>
-            <span className="flex items-center gap-1 text-[10px] text-green-400">
-              <span className="bg-green-400 rounded-full w-1.5 h-1.5 animate-pulse"></span>
-              Online
-            </span>
+            {isUserOnline ? (
+              <span className="flex items-center gap-1 text-[10px] text-green-400">
+                <span className="bg-green-400 rounded-full w-1.5 h-1.5 animate-pulse"></span>
+                Online
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                <span className="bg-gray-500 rounded-full w-1.5 h-1.5"></span>
+                Offline
+              </span>
+            )}
           </div>
         </div>
 
@@ -210,7 +218,7 @@ export default function ChatPage() {
 
       {/* Input Footer */}
       <div className="bg-[#150f24] p-4 border-[#2d213f] border-t">
-        <ChatBox messages={msg} setMessages={setMsg} />
+        <ChatBox messages={msg} setMessages={setMsg} setIsRecipientOnline={setIsUserOnline} />
       </div>
     </div>
   );

@@ -1,40 +1,41 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db } from "mongodb";
 
-// Replace with your MongoDB instance URL
-const url = `${process.env.MONGODB_URI}`;
-const dbName = process.env.DB_NAME; // Replace with your database name
+const url = process.env.MONGODB_URI || "";
+const dbName = process.env.DB_NAME || "tekChat-App";
 
-let client: any;
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
+
 const options = {
   connectTimeoutMS: 60000,
-  maxPoolSize: 150
-}
+  maxPoolSize: 150,
+};
 
-async function connect() {
-  let retries = 0;
-  const maxRetries = 5;
-  while (retries < maxRetries) {
-    try {
-      client = await MongoClient.connect(url, options);
-      client.on('TopologyChange', (err: any, topology: any) => {
-        if (err) {
-          console.error('Connection lost:', err);
-        } else {
-          console.log('Reconnected:', topology);
-        }
-      });
+async function connect(): Promise<Db> {
+  if (cachedDb) return cachedDb;
+  if (!url) throw new Error("MONGODB_URI is not set");
 
-      return client.db(dbName);
-    } catch (e) {
-      console.log(`Retry ${retries + 1} of ${maxRetries}:`, e);
-      await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5 seconds before retrying
-      retries++;
-    }
+  // Create new client if none cached
+  if (!cachedClient) {
+    cachedClient = new MongoClient(url, options as any);
   }
-  throw new Error(`Failed to connect after ${maxRetries} retries`);
+
+  // Ensure the client is connected
+  if (!cachedClient.topology || !cachedClient.topology.isConnected()) {
+    await cachedClient.connect();
+  }
+
+  cachedDb = cachedClient.db(dbName);
+  return cachedDb;
 }
-async function disconnect() {
-  if (client)
-    await client.close();
+
+async function disconnect(force = false) {
+  // Only close in forced scenarios to allow connection reuse across requests
+  if (force && cachedClient) {
+    await cachedClient.close();
+    cachedClient = null;
+    cachedDb = null;
+  }
 }
+
 export { connect, disconnect };
